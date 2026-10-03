@@ -1,13 +1,32 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
+from flask_login import UserMixin
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import check_password_hash, generate_password_hash
+
 db = SQLAlchemy()
+
+
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 class LearningEntry(db.Model):
     __tablename__ = "learning_entries"
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     topic = db.Column(db.String(120), nullable=False)
     date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
     hours_spent = db.Column(db.Float, nullable=False, default=0.0)
@@ -27,6 +46,7 @@ class JobSwitchStage(db.Model):
     __tablename__ = "job_switch_stages"
 
     id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     company = db.Column(db.String(120), nullable=False)
     stage_name = db.Column(db.String(80), nullable=False)  # e.g. Applied, Interview, Offer
     status = db.Column(db.String(40), nullable=False, default="active")  # active, rejected, accepted

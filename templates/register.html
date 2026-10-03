@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Register - Learning Tracker{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>Create an account</h2>
+  <form method="post" action="{{ url_for('register') }}">
+    <label for="username">Username (3 to 50 characters)</label>
+    <input id="username" name="username" required minlength="3" maxlength="50" autocomplete="username">
+    <label for="password">Password (at least 8 characters)</label>
+    <input id="password" name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
+    <p><button type="submit">Register</button></p>
+  </form>
+  <p class="muted">Already registered? <a href="{{ url_for('login') }}">Log in</a></p>
+</div>
+{% endblock %}
