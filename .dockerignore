@@ -6,3 +6,9 @@ __pycache__
 .dockerignore
 Dockerfile
 docker-compose.yml
+tests
+requirements-dev.txt
+.venv
+.pytest_cache
+instance
+.github
