@@ -72,3 +72,7 @@ def test_stage_can_be_created_and_updated(client):
     updated = client.put(f"/stages/{stage_id}", json={"stage_name": "Interview"})
     assert updated.status_code == 200
     assert updated.get_json()["stage_name"] == "Interview"
+
+def test_database_connections_are_checked_before_use(client):
+    options = client.application.config["SQLALCHEMY_ENGINE_OPTIONS"]
+    assert options["pool_pre_ping"] is True
