@@ -76,3 +76,28 @@ def test_stage_can_be_created_and_updated(client):
 def test_database_connections_are_checked_before_use(client):
     options = client.application.config["SQLALCHEMY_ENGINE_OPTIONS"]
     assert options["pool_pre_ping"] is True
+
+def test_database_uri_escapes_the_password(monkeypatch):
+    from sqlalchemy.engine import make_url
+
+    from app import build_database_uri
+
+    password = "p@ss/w:rd#1"
+    monkeypatch.setenv("POSTGRES_HOST", "tracker-db")
+    monkeypatch.setenv("POSTGRES_DB", "trackerdb")
+    monkeypatch.setenv("POSTGRES_PASSWORD", password)
+    url = build_database_uri()
+    assert url.host == "tracker-db"
+    assert url.database == "trackerdb"
+    assert url.password == password
+    rendered = url.render_as_string(hide_password=False)
+    assert password not in rendered
+    assert make_url(rendered).password == password
+
+
+def test_database_uri_falls_back_to_sqlite(monkeypatch):
+    from app import build_database_uri
+
+    for name in ("POSTGRES_HOST", "POSTGRES_DB", "POSTGRES_PASSWORD"):
+        monkeypatch.delenv(name, raising=False)
+    assert build_database_uri() == "sqlite:///tracker.db"
