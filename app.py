@@ -9,6 +9,7 @@ from flask_login import (
     login_user,
     logout_user,
 )
+from sqlalchemy.engine import URL
 from sqlalchemy.exc import IntegrityError
 
 from models import JobSwitchStage, LearningEntry, User, db
@@ -31,17 +32,29 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"  # blocks cross-site form posts (C
 allow_registration = os.environ.get("ALLOW_REGISTRATION", "true").lower() == "true"
 
 # Database: Postgres when these env vars are set, local SQLite otherwise.
-db_host = os.environ.get("POSTGRES_HOST")
-db_name = os.environ.get("POSTGRES_DB")
-db_password = os.environ.get("POSTGRES_PASSWORD")
-db_user = os.environ.get("POSTGRES_USER", "postgres")
+def build_database_uri():
+    """PostgreSQL when the POSTGRES_* variables are set, local SQLite otherwise.
 
-if db_host and db_name and db_password:
-    app.config["SQLALCHEMY_DATABASE_URI"] = (
-        f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:5432/{db_name}"
-    )
-else:
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tracker.db"
+    URL.create() escapes special characters, so a password containing '@' or '/'
+    cannot break the connection string.
+    """
+    host = os.environ.get("POSTGRES_HOST")
+    name = os.environ.get("POSTGRES_DB")
+    password = os.environ.get("POSTGRES_PASSWORD")
+    user = os.environ.get("POSTGRES_USER", "postgres")
+    if host and name and password:
+        return URL.create(
+            "postgresql+psycopg2",
+            username=user,
+            password=password,
+            host=host,
+            port=5432,
+            database=name,
+        )
+    return "sqlite:///tracker.db"
+
+
+app.config["SQLALCHEMY_DATABASE_URI"] = build_database_uri()
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
